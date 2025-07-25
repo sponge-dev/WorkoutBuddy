@@ -634,7 +634,7 @@ function calculateBMI() {
     }
     
     // BMI = (weight in lbs / height in inches²) × 703
-    const bmi = (weight / Math.pow(height, 2)) * 703;
+    const bmi = (weight / (height * height)) * 703;
     const bmiRounded = Math.round(bmi * 10) / 10;
     
     let category = '';

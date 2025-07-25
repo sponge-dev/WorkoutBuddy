@@ -400,7 +400,12 @@ function saveUserGoals() {
 
 function calculateBMI(weight, height) {
     // BMI = (weight in lbs / height in inches²) × 703
-    return Math.round((weight / (height * height)) * 703 * 10) / 10;
+    if (!weight || !height || weight <= 0 || height <= 0) {
+        return null;
+    }
+    
+    const bmi = (weight / (height * height)) * 703;
+    return Math.round(bmi * 10) / 10;
 }
 
 function openEditProfile() {

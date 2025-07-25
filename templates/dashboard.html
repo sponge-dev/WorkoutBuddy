@@ -77,7 +77,7 @@
         <div class="stat-card">
             <div class="stat-number" style="font-size: 1.2rem;">BMI Health Status</div>
             <div class="stat-label">
-                <canvas id="bmiSpeedometer" width="120" height="80"></canvas>
+                <canvas id="bmiSpeedometer" width="140" height="90" style="max-width: 100%;"></canvas>
                 <div id="bmiValue" class="mt-2"></div>
             </div>
         </div>
@@ -405,12 +405,46 @@ function updateQuickStats(data) {
         fetch('/api/user')
             .then(response => response.json())
             .then(userData => {
-                if (userData.height) {
+                if (userData.height && latestWeight) {
                     const bmi = calculateBMI(latestWeight, userData.height);
+                    console.log('Creating BMI speedometer with:', { weight: latestWeight, height: userData.height, bmi });
                     createBMISpeedometer(bmi);
+                } else {
+                    console.warn('Missing data for BMI calculation:', { height: userData.height, weight: latestWeight });
+                    showBMIPlaceholder();
                 }
+            })
+            .catch(error => {
+                console.error('Error loading user data for BMI:', error);
+                showBMIPlaceholder();
             });
+    } else {
+        // No weight data available
+        document.getElementById('currentWeight').textContent = '-';
+        showBMIPlaceholder();
     }
+}
+
+function showBMIPlaceholder() {
+    document.getElementById('bmiValue').innerHTML = `
+        <small class="text-muted">Add weight & height data</small>
+    `;
+    
+    // Draw empty speedometer
+    const canvas = document.getElementById('bmiSpeedometer');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height - 15;
+    const radius = Math.min(canvas.width, canvas.height) * 0.35;
+    
+    // Draw background arc only
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#E5E7EB';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
+    ctx.stroke();
 }
 
 function createWeightChart(weightData) {
@@ -687,7 +721,18 @@ function startWorkoutSession() {
 
 function calculateBMI(weight, height) {
     // BMI = (weight in lbs / height in inches²) × 703
-    return Math.round((weight / (height * height)) * 703 * 10) / 10;
+    if (!weight || !height || weight <= 0 || height <= 0) {
+        console.warn('Invalid BMI inputs:', { weight, height });
+        return 25; // Default to normal BMI if invalid inputs
+    }
+    
+    const bmi = (weight / (height * height)) * 703;
+    const roundedBMI = Math.round(bmi * 10) / 10;
+    
+    console.log('BMI Calculation:', { weight, height, bmi: roundedBMI });
+    
+    // Clamp to reasonable range for display
+    return Math.min(Math.max(roundedBMI, 10), 50);
 }
 
 // Chatbot functionality
@@ -843,50 +888,91 @@ function createBMISpeedometer(bmi) {
     
     // Set up dimensions
     const centerX = canvas.width / 2;
-    const centerY = canvas.height - 10;
-    const radius = 45;
+    const centerY = canvas.height - 15;
+    const radius = Math.min(canvas.width, canvas.height) * 0.35;
     
-    // BMI ranges and colors
+    // BMI ranges and colors (focused on realistic range 15-35)
+    const minBMI = 15;
+    const maxBMI = 35;
     const ranges = [
-        { min: 0, max: 18.5, color: '#3B82F6', label: 'Underweight' },
+        { min: 15, max: 18.5, color: '#3B82F6', label: 'Underweight' },
         { min: 18.5, max: 25, color: '#10B981', label: 'Normal' },
         { min: 25, max: 30, color: '#F59E0B', label: 'Overweight' },
-        { min: 30, max: 40, color: '#DC2626', label: 'Obese' }
+        { min: 30, max: 35, color: '#DC2626', label: 'Obese' }
     ];
     
     // Draw background arc
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 6;
     ctx.strokeStyle = '#E5E7EB';
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, Math.PI, 0);
+    ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
     ctx.stroke();
     
-    // Draw colored segments
+    // Calculate angle mapping: π (left) to 0 (right)
     const totalAngle = Math.PI;
-    const anglePerUnit = totalAngle / 40; // BMI 0-40 range
+    const bmiRange = maxBMI - minBMI;
     
+    // Draw colored segments
     ranges.forEach(range => {
-        const startAngle = Math.PI - (range.min * anglePerUnit);
-        const endAngle = Math.PI - (range.max * anglePerUnit);
+        const startRatio = (range.min - minBMI) / bmiRange;
+        const endRatio = (range.max - minBMI) / bmiRange;
+        
+        // Convert to angles: left (π) to right (0)
+        const startAngle = Math.PI - (startRatio * totalAngle);
+        const endAngle = Math.PI - (endRatio * totalAngle);
         
         ctx.strokeStyle = range.color;
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
         ctx.stroke();
     });
     
-    // Draw needle
-    const bmiClamped = Math.min(Math.max(bmi, 0), 40);
-    const needleAngle = Math.PI - (bmiClamped * anglePerUnit);
+    // Draw scale marks and labels
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#374151';
+    ctx.font = '8px Arial';
+    ctx.textAlign = 'center';
     
+    const scaleValues = [15, 18.5, 20, 25, 30, 35];
+    for (let i = 0; i < scaleValues.length; i++) {
+        const value = scaleValues[i];
+        const ratio = (value - minBMI) / bmiRange;
+        const angle = Math.PI - (ratio * Math.PI);
+        
+        // Scale mark
+        const x1 = centerX + (radius - 6) * Math.cos(angle);
+        const y1 = centerY + (radius - 6) * Math.sin(angle);
+        const x2 = centerX + (radius - 1) * Math.cos(angle);
+        const y2 = centerY + (radius - 1) * Math.sin(angle);
+        
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        
+        // Scale label (only for key values to avoid clutter)
+        if (value === 18.5 || value === 25 || value === 30) {
+            const labelX = centerX + (radius + 10) * Math.cos(angle);
+            const labelY = centerY + (radius + 10) * Math.sin(angle);
+            ctx.fillText(value.toString(), labelX, labelY + 2);
+        }
+    }
+    
+    // Draw needle
+    const bmiClamped = Math.min(Math.max(bmi, minBMI), maxBMI);
+    const bmiRatio = (bmiClamped - minBMI) / bmiRange;
+    const needleAngle = Math.PI - (bmiRatio * totalAngle);
+    
+    // Needle line
     ctx.strokeStyle = '#1F2937';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(
-        centerX + (radius - 10) * Math.cos(needleAngle),
-        centerY + (radius - 10) * Math.sin(needleAngle)
+        centerX + (radius - 8) * Math.cos(needleAngle),
+        centerY + (radius - 8) * Math.sin(needleAngle)
     );
     ctx.stroke();
     
@@ -897,7 +983,15 @@ function createBMISpeedometer(bmi) {
     ctx.fill();
     
     // Update BMI value display
-    const currentRange = ranges.find(range => bmi >= range.min && bmi < range.max) || ranges[ranges.length - 1];
+    let currentRange;
+    if (bmi < 15) {
+        currentRange = { color: '#3B82F6', label: 'Very Underweight' };
+    } else if (bmi > 35) {
+        currentRange = { color: '#DC2626', label: 'Severely Obese' };
+    } else {
+        currentRange = ranges.find(range => bmi >= range.min && bmi < range.max) || ranges[ranges.length - 1];
+    }
+    
     document.getElementById('bmiValue').innerHTML = `
         <strong style="color: ${currentRange.color};">${bmi}</strong><br>
         <small style="color: ${currentRange.color};">${currentRange.label}</small>
