@@ -26,7 +26,7 @@ openai_client = OpenAI(api_key=api_keys['OPENAI_API_KEY'])
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    height = db.Column(db.Float)  # in cm
+    height = db.Column(db.Float)  # in inches
     age = db.Column(db.Integer)
     gender = db.Column(db.String(10))
     fitness_level = db.Column(db.String(20))  # beginner, intermediate, advanced
@@ -40,11 +40,11 @@ class User(db.Model):
 class Progress(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False, default=datetime.utcnow().date())
-    weight = db.Column(db.Float)  # in kg
+    date = db.Column(db.Date, nullable=False, default=datetime.now().date())
+    weight = db.Column(db.Float)  # in lbs
     body_fat_percentage = db.Column(db.Float)
     muscle_mass = db.Column(db.Float)
-    chest = db.Column(db.Float)  # measurements in cm
+    chest = db.Column(db.Float)  # measurements in inches
     waist = db.Column(db.Float)
     hips = db.Column(db.Float)
     arms = db.Column(db.Float)
@@ -116,10 +116,10 @@ class WorkoutExercise(db.Model):
     # Relationships
     exercise = db.relationship('Exercise', backref='workout_exercises')
 
-# Helper function to calculate BMI
-def calculate_bmi(weight_kg, height_cm):
-    height_m = height_cm / 100
-    return round(weight_kg / (height_m ** 2), 2)
+# Helper function to calculate BMI (Imperial units)
+def calculate_bmi(weight_lbs, height_inches):
+    # BMI = (weight in lbs / height in inches²) × 703
+    return round((weight_lbs / (height_inches ** 2)) * 703, 2)
 
 # Routes
 @app.route('/')
@@ -156,7 +156,7 @@ def user_api():
     
     # GET request
     user_id = session.get('user_id', 1)  # Default to user 1 for demo
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if user:
         return jsonify({
             'id': user.id,
@@ -249,24 +249,27 @@ def generate_workout_plan():
     data = request.json
     
     # Get user info and goals
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     latest_progress = Progress.query.filter_by(user_id=user_id).order_by(Progress.date.desc()).first()
     active_goal = Goal.query.filter_by(user_id=user_id, is_active=True).first()
     
     # Prepare context for OpenAI
+    training_frequency = active_goal.workout_frequency if active_goal else data.get('frequency', 3)
     context = f"""
     TRAINING PROGRAM SPECIFICATIONS
     
     Client Profile:
-    • Demographics: {user.gender}, {user.age} years, {user.height}cm
-    • Current Weight: {latest_progress.weight if latest_progress else 'Baseline required'}kg
+    • Demographics: {user.gender}, {user.age} years, {user.height} inches
+    • Current Weight: {latest_progress.weight if latest_progress else 'Baseline required'} lbs
     • Experience Level: {user.fitness_level}
     • Primary Objective: {active_goal.goal_type if active_goal else data.get('goal_type', 'general fitness')}
     
     Program Parameters:
-    • Training Frequency: {active_goal.workout_frequency if active_goal else data.get('frequency', 3)} sessions per week
+    • Training Frequency: {training_frequency} sessions per week
     • Session Duration: {active_goal.workout_duration if active_goal else data.get('duration', 60)} minutes
     • Available Equipment: {json.loads(active_goal.equipment_available) if active_goal else data.get('equipment', ['bodyweight'])}
+    
+    CRITICAL: Create exactly {training_frequency} distinct workout days (Day 1, Day 2, etc.) with clear daily structure for weekly scheduling.
     
     Required Output Format:
     
@@ -274,15 +277,21 @@ def generate_workout_plan():
     [Brief program description and periodization approach]
     
     WEEKLY TRAINING SCHEDULE
-    [Specific day assignments and session types]
+    [Specify which days of the week correspond to each training day - e.g., Monday: Day 1, Wednesday: Day 2, Friday: Day 3]
     
     DETAILED WORKOUT SESSIONS
-    Day 1: [Session Name]
+    Day 1: [Specific Session Name - e.g., "Upper Body Strength Training"]
+    • Exercise 1: [Name] - [Sets] x [Reps] @ [Intensity/Weight] | Rest: [Time]
+    • Exercise 2: [Name] - [Sets] x [Reps] @ [Intensity/Weight] | Rest: [Time]
+    • Exercise 3: [Name] - [Sets] x [Reps] @ [Intensity/Weight] | Rest: [Time]
+    [Continue for all exercises - minimum 6 exercises per day]
+    
+    Day 2: [Specific Session Name - e.g., "Lower Body Power Training"]
     • Exercise 1: [Name] - [Sets] x [Reps] @ [Intensity/Weight] | Rest: [Time]
     • Exercise 2: [Name] - [Sets] x [Reps] @ [Intensity/Weight] | Rest: [Time]
     [Continue for all exercises]
     
-    [Repeat for each training day]
+    [Repeat format for all {training_frequency} training days]
     
     PROGRESSION PROTOCOL
     [Specific progression methods and timelines]
@@ -351,10 +360,10 @@ def delete_workout_plan(plan_id):
     try:
         # Also delete any workout sessions associated with this plan
         associated_sessions = WorkoutSession.query.filter_by(workout_plan_id=plan_id, user_id=user_id).all()
-        for session in associated_sessions:
+        for workout_session in associated_sessions:
             # Delete workout exercises for each session
-            WorkoutExercise.query.filter_by(workout_session_id=session.id).delete()
-            db.session.delete(session)
+            WorkoutExercise.query.filter_by(workout_session_id=workout_session.id).delete()
+            db.session.delete(workout_session)
         
         # Delete the plan itself
         db.session.delete(plan)
@@ -475,7 +484,7 @@ def chatbot_api():
         return jsonify({'error': 'Message is required'}), 400
     
     # Get user context
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     latest_progress = Progress.query.filter_by(user_id=user_id).order_by(Progress.date.desc()).first()
     active_goal = Goal.query.filter_by(user_id=user_id, is_active=True).first()
     recent_sessions = WorkoutSession.query.filter_by(user_id=user_id).order_by(WorkoutSession.date.desc()).limit(5).all()
@@ -486,9 +495,9 @@ def chatbot_api():
     
     Client Profile:
     • Individual: {user.name if user else 'Client'}
-    • Demographics: {user.age if user else 'Age not specified'} years, {user.height if user else 'Height not specified'}cm, {user.gender if user else 'Gender not specified'}
+    • Demographics: {user.age if user else 'Age not specified'} years, {user.height if user else 'Height not specified'} inches, {user.gender if user else 'Gender not specified'}
     • Experience Level: {user.fitness_level if user else 'Assessment required'}
-    • Current Status: {latest_progress.weight if latest_progress else 'Baseline assessment pending'}kg
+    • Current Status: {latest_progress.weight if latest_progress else 'Baseline assessment pending'} lbs
     • Training Objective: {active_goal.goal_type if active_goal else 'Goals to be established'}
     • Recent Activity: {len(recent_sessions)} training sessions completed
     
@@ -570,8 +579,8 @@ def statistics_api():
     # Workout frequency by month
     from collections import defaultdict
     monthly_workouts = defaultdict(int)
-    for session in workout_sessions:
-        month_key = session.date.strftime('%Y-%m')
+    for workout_session in workout_sessions:
+        month_key = workout_session.date.strftime('%Y-%m')
         monthly_workouts[month_key] += 1
     
     return jsonify({
@@ -582,6 +591,144 @@ def statistics_api():
         'monthly_workouts': dict(monthly_workouts),
         'database_location': 'workoutbot.db (in project root directory)'
     })
+
+@app.route('/api/todays-workout', methods=['GET'])
+def get_todays_workout():
+    user_id = session.get('user_id', 1)
+    
+    # Get current day of week (0 = Monday, 6 = Sunday)
+    current_day = datetime.now().weekday()
+    day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    today_name = day_names[current_day]
+    
+    # Get active workout plan
+    active_plan = WorkoutPlan.query.filter_by(user_id=user_id, is_active=True).order_by(WorkoutPlan.created_at.desc()).first()
+    
+    if not active_plan:
+        return jsonify({'error': 'No active workout plan found'}), 404
+    
+    # Parse the workout plan to extract daily workouts
+    daily_workouts = parse_daily_workouts(active_plan.description)
+    
+    # Get workout for today based on training frequency and day
+    todays_workout = get_workout_for_day(daily_workouts, current_day, active_plan.days_per_week)
+    
+    if not todays_workout:
+        return jsonify({
+            'day': today_name,
+            'workout': None,
+            'plan_id': active_plan.id,
+            'is_rest_day': True
+        })
+    
+    # Check if workout was already completed today
+    today_date = datetime.now().date()
+    completed_session = WorkoutSession.query.filter_by(
+        user_id=user_id,
+        date=today_date,
+        completed=True
+    ).first()
+    
+    return jsonify({
+        'day': today_name,
+        'workout': {
+            'name': todays_workout['name'],
+            'duration': todays_workout.get('duration', 60),
+            'focus': todays_workout.get('focus', 'Full Body'),
+            'preview': todays_workout.get('preview', ''),
+            'exercises': todays_workout.get('exercises', []),
+            'completed': completed_session is not None
+        },
+        'plan_id': active_plan.id,
+        'is_rest_day': False
+    })
+
+def parse_daily_workouts(plan_description):
+    """Parse the AI-generated workout plan to extract daily workout structure"""
+    daily_workouts = {}
+    
+    # Split the plan into sections
+    lines = plan_description.split('\n')
+    current_day = None
+    current_workout = {'exercises': [], 'preview': ''}
+    
+    for line in lines:
+        line = line.strip()
+        
+        # Look for day headers (Day 1:, Day 2:, etc.)
+        if line.startswith('Day ') and ':' in line:
+            # Save previous workout
+            if current_day:
+                daily_workouts[current_day] = current_workout
+            
+            # Start new workout
+            current_day = line.split(':')[0].strip()
+            workout_name = line.split(':', 1)[1].strip()
+            current_workout = {
+                'name': workout_name,
+                'exercises': [],
+                'preview': '',
+                'focus': extract_focus_from_name(workout_name)
+            }
+        
+        # Look for exercise lines (start with •)
+        elif line.startswith('•') and current_day:
+            exercise = line[1:].strip()
+            current_workout['exercises'].append(exercise)
+            
+            # Build preview (first 3 exercises)
+            if len(current_workout['exercises']) <= 3:
+                if current_workout['preview']:
+                    current_workout['preview'] += '<br>'
+                current_workout['preview'] += f"• {exercise}"
+    
+    # Save last workout
+    if current_day:
+        daily_workouts[current_day] = current_workout
+    
+    return daily_workouts
+
+def extract_focus_from_name(workout_name):
+    """Extract workout focus from the workout name"""
+    name_lower = workout_name.lower()
+    
+    if any(word in name_lower for word in ['upper', 'chest', 'back', 'shoulder', 'arm']):
+        return 'Upper Body'
+    elif any(word in name_lower for word in ['lower', 'leg', 'squat', 'deadlift']):
+        return 'Lower Body'
+    elif any(word in name_lower for word in ['cardio', 'hiit', 'conditioning']):
+        return 'Cardio'
+    elif any(word in name_lower for word in ['core', 'abs', 'plank']):
+        return 'Core'
+    else:
+        return 'Full Body'
+
+def get_workout_for_day(daily_workouts, current_day, days_per_week):
+    """Determine which workout to do based on current day and training frequency"""
+    
+    # Create a mapping of weekdays to workout days based on frequency
+    if days_per_week == 3:
+        # Mon, Wed, Fri
+        workout_schedule = {0: 'Day 1', 2: 'Day 2', 4: 'Day 3'}
+    elif days_per_week == 4:
+        # Mon, Tue, Thu, Fri
+        workout_schedule = {0: 'Day 1', 1: 'Day 2', 3: 'Day 3', 4: 'Day 4'}
+    elif days_per_week == 5:
+        # Mon-Fri
+        workout_schedule = {0: 'Day 1', 1: 'Day 2', 2: 'Day 3', 3: 'Day 4', 4: 'Day 5'}
+    elif days_per_week == 6:
+        # Mon-Sat
+        workout_schedule = {0: 'Day 1', 1: 'Day 2', 2: 'Day 3', 3: 'Day 4', 4: 'Day 5', 5: 'Day 6'}
+    else:
+        # Default: 3 days
+        workout_schedule = {0: 'Day 1', 2: 'Day 2', 4: 'Day 3'}
+    
+    workout_day = workout_schedule.get(current_day)
+    
+    if workout_day and workout_day in daily_workouts:
+        return daily_workouts[workout_day]
+    
+    return None
 
 # Initialize database
 def init_db():

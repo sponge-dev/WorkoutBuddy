@@ -232,11 +232,11 @@ function formatTime(minutes) {
     return `${mins} min`;
 }
 
-// Calculate BMI
+// Calculate BMI (Imperial units)
 function calculateBMI(weight, height) {
     if (!weight || !height) return null;
-    const heightInMeters = height / 100;
-    return Math.round(weight / (heightInMeters * heightInMeters) * 10) / 10;
+    // BMI = (weight in lbs / height in inches²) × 703
+    return Math.round((weight / (height * height)) * 703 * 10) / 10;
 }
 
 // Format number with appropriate decimals

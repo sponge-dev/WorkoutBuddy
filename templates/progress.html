@@ -28,8 +28,8 @@
                     </div>
                     <div class="col-md-6">
                         <div class="measurement-input">
-                            <label for="progressWeight" class="form-label">Weight (kg)</label>
-                            <input type="number" class="form-control" id="progressWeight" step="0.1" placeholder="Enter weight">
+                            <label for="progressWeight" class="form-label">Weight (lbs)</label>
+                            <input type="number" class="form-control" id="progressWeight" step="0.1" placeholder="Enter weight in pounds">
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -40,42 +40,42 @@
                     </div>
                     <div class="col-md-6">
                         <div class="measurement-input">
-                            <label for="progressMuscleMass" class="form-label">Muscle Mass (kg)</label>
+                            <label for="progressMuscleMass" class="form-label">Muscle Mass (lbs)</label>
                             <input type="number" class="form-control" id="progressMuscleMass" step="0.1" placeholder="Optional">
                         </div>
                     </div>
                 </div>
                 
-                <h5 class="mt-4 mb-3">Body Measurements (cm)</h5>
+                <h5 class="mt-4 mb-3">Body Measurements (inches)</h5>
                 <div class="row g-3">
                     <div class="col-md-4">
                         <div class="measurement-input">
                             <label for="progressChest" class="form-label">Chest</label>
-                            <input type="number" class="form-control" id="progressChest" step="0.1" placeholder="Chest circumference">
+                            <input type="number" class="form-control" id="progressChest" step="0.1" placeholder="Chest circumference in inches">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="measurement-input">
                             <label for="progressWaist" class="form-label">Waist</label>
-                            <input type="number" class="form-control" id="progressWaist" step="0.1" placeholder="Waist circumference">
+                            <input type="number" class="form-control" id="progressWaist" step="0.1" placeholder="Waist circumference in inches">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="measurement-input">
                             <label for="progressHips" class="form-label">Hips</label>
-                            <input type="number" class="form-control" id="progressHips" step="0.1" placeholder="Hip circumference">
+                            <input type="number" class="form-control" id="progressHips" step="0.1" placeholder="Hip circumference in inches">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="measurement-input">
                             <label for="progressArms" class="form-label">Arms</label>
-                            <input type="number" class="form-control" id="progressArms" step="0.1" placeholder="Bicep circumference">
+                            <input type="number" class="form-control" id="progressArms" step="0.1" placeholder="Bicep circumference in inches">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="measurement-input">
                             <label for="progressThighs" class="form-label">Thighs</label>
-                            <input type="number" class="form-control" id="progressThighs" step="0.1" placeholder="Thigh circumference">
+                            <input type="number" class="form-control" id="progressThighs" step="0.1" placeholder="Thigh circumference in inches">
                         </div>
                     </div>
                 </div>
@@ -162,12 +162,12 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="bmiWeight" class="form-label">Weight (kg)</label>
+                        <label for="bmiWeight" class="form-label">Weight (lbs)</label>
                         <input type="number" class="form-control" id="bmiWeight" step="0.1">
                     </div>
                     <div class="col-md-6">
-                        <label for="bmiHeight" class="form-label">Height (cm)</label>
-                        <input type="number" class="form-control" id="bmiHeight">
+                        <label for="bmiHeight" class="form-label">Height (inches)</label>
+                        <input type="number" class="form-control" id="bmiHeight" step="0.5" placeholder="e.g., 70 for 5'10&quot;">
                     </div>
                     <div class="col-12">
                         <button type="button" class="btn btn-primary" onclick="calculateBMI()">
@@ -217,11 +217,11 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Date</th>
-                                <th>Weight (kg)</th>
+                                <th>Weight (lbs)</th>
                                 <th>Body Fat (%)</th>
-                                <th>Chest (cm)</th>
-                                <th>Waist (cm)</th>
-                                <th>Arms (cm)</th>
+                                <th>Chest (in)</th>
+                                <th>Waist (in)</th>
+                                <th>Arms (in)</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -330,7 +330,7 @@ function createWeightChart(progressData) {
         data: {
             labels: weightData.map(d => new Date(d.date).toLocaleDateString()),
             datasets: [{
-                label: 'Weight (kg)',
+                label: 'Weight (lbs)',
                 data: weightData.map(d => d.weight),
                 borderColor: '#007bff',
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
@@ -530,7 +530,7 @@ function createProgressSummary(progressData) {
         <div class="mb-3">
             <h6 class="text-primary">Latest Entry</h6>
             <p class="mb-1">Date: ${new Date(latest.date).toLocaleDateString()}</p>
-            ${latest.weight ? `<p class="mb-1">Weight: ${latest.weight} kg</p>` : ''}
+                            ${latest.weight ? `<p class="mb-1">Weight: ${latest.weight} lbs</p>` : ''}
             ${latest.body_fat_percentage ? `<p class="mb-1">Body Fat: ${latest.body_fat_percentage}%</p>` : ''}
         </div>
     `;
@@ -545,7 +545,7 @@ function createProgressSummary(progressData) {
                 <h6 class="text-primary">Recent Change</h6>
                 <p class="mb-1 ${changeClass}">
                     <i class="fas ${changeIcon} me-1"></i>
-                    ${Math.abs(weightChange)} kg since last entry
+                    ${Math.abs(weightChange)} lbs since last entry
                 </p>
             </div>
         `;
@@ -633,7 +633,8 @@ function calculateBMI() {
         return;
     }
     
-    const bmi = weight / Math.pow(height / 100, 2);
+    // BMI = (weight in lbs / height in inches²) × 703
+    const bmi = (weight / Math.pow(height, 2)) * 703;
     const bmiRounded = Math.round(bmi * 10) / 10;
     
     let category = '';

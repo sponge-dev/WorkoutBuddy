@@ -74,7 +74,7 @@
     <div class="col-md-3">
         <div class="stat-card">
             <div class="stat-number" id="currentWeight">--</div>
-            <div class="stat-label">Current Weight (kg)</div>
+            <div class="stat-label">Current Weight (lbs)</div>
         </div>
     </div>
     <div class="col-md-3">
@@ -107,8 +107,8 @@
                             <input type="number" class="form-control" id="userAge" min="13" max="100" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="userHeight" class="form-label">Height (cm)</label>
-                            <input type="number" class="form-control" id="userHeight" min="100" max="250" required>
+                            <label for="userHeight" class="form-label">Height (inches)</label>
+                            <input type="number" class="form-control" id="userHeight" min="48" max="84" step="0.5" placeholder="e.g., 70 for 5'10&quot;" required>
                         </div>
                         <div class="col-md-6">
                             <label for="userGender" class="form-label">Gender</label>
@@ -366,8 +366,8 @@ function saveUserGoals() {
 }
 
 function calculateBMI(weight, height) {
-    const heightInMeters = height / 100;
-    return Math.round(weight / (heightInMeters * heightInMeters) * 10) / 10;
+    // BMI = (weight in lbs / height in inches²) × 703
+    return Math.round((weight / (height * height)) * 703 * 10) / 10;
 }
 </script>
 {% endblock %} 
