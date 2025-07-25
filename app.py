@@ -7,6 +7,8 @@ from openai import OpenAI
 import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+import plotly.graph_objects as go
+import plotly.utils
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
@@ -522,6 +524,132 @@ def workout_sessions_api():
         'completed': s.completed,
         'notes': s.notes
     } for s in sessions])
+
+@app.route('/api/workout-sessions/<int:session_id>', methods=['DELETE'])
+def delete_workout_session(session_id):
+    user_id = session.get('user_id', 1)
+    workout_session = WorkoutSession.query.filter_by(id=session_id, user_id=user_id).first()
+    
+    if not workout_session:
+        return jsonify({'error': 'Workout session not found'}), 404
+    
+    try:
+        # Delete associated workout exercises
+        WorkoutExercise.query.filter_by(workout_session_id=session_id).delete()
+        
+        # Delete the session
+        db.session.delete(workout_session)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Workout session deleted successfully',
+            'deleted_session_id': session_id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete workout session: {str(e)}'}), 500
+
+@app.route('/api/bmi-gauge', methods=['GET'])
+def get_bmi_gauge():
+    user_id = session.get('user_id', 1)
+    
+    # Get user data and latest progress
+    user = db.session.get(User, user_id)
+    latest_progress = Progress.query.filter_by(user_id=user_id).order_by(Progress.date.desc()).first()
+    
+    if not user or not user.height or not latest_progress or not latest_progress.weight:
+        return jsonify({'error': 'Insufficient data for BMI calculation'}), 400
+    
+    # Calculate BMI
+    bmi = calculate_bmi(latest_progress.weight, user.height)
+    
+    # Create Plotly gauge figure with enhanced styling
+    fig = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = bmi,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {
+            'text': "BMI Health Index", 
+            'font': {'size': 18, 'color': '#1F2937', 'family': 'Inter, sans-serif'}
+        },
+        number = {
+            'font': {'size': 28, 'color': '#1F2937', 'family': 'Inter, sans-serif'},
+            'suffix': f' ({category})'
+        },
+        gauge = {
+            'axis': {
+                'range': [15, 35], 
+                'tickwidth': 1, 
+                'tickcolor': "#6B7280",
+                'tickfont': {'size': 9, 'color': '#6B7280'},
+                'tickmode': 'array',
+                'tickvals': [15, 18.5, 25, 30, 35],
+                'ticktext': ['15', '18.5', '25', '30', '35']
+            },
+            'bar': {'color': color, 'thickness': 0.25, 'line': {'width': 0}},
+            'bgcolor': "rgba(255,255,255,0.9)",
+            'borderwidth': 2,
+            'bordercolor': "#E5E7EB",
+            'steps': [
+                {'range': [15, 18.5], 'color': '#DBEAFE', 'name': 'Underweight', 'line': {'width': 0}},
+                {'range': [18.5, 25], 'color': '#D1FAE5', 'name': 'Normal', 'line': {'width': 0}},
+                {'range': [25, 30], 'color': '#FEF3C7', 'name': 'Overweight', 'line': {'width': 0}},
+                {'range': [30, 35], 'color': '#FEE2E2', 'name': 'Obese', 'line': {'width': 0}}
+            ],
+            'threshold': {
+                'line': {'color': "#DC2626", 'width': 2},
+                'thickness': 0.75,
+                'value': 30
+            }
+        }
+    ))
+    
+    # Update layout for professional appearance
+    fig.update_layout(
+        height=220,
+        margin=dict(l=20, r=20, t=50, b=20),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font={'family': "Inter, sans-serif", 'color': "#374151"},
+        showlegend=False,
+        annotations=[
+            dict(
+                text=f"Weight: {latest_progress.weight} lbs<br>Height: {user.height}\"",
+                showarrow=False,
+                x=0.5, y=0.1,
+                xref="paper", yref="paper",
+                xanchor="center", yanchor="bottom",
+                font=dict(size=10, color="#6B7280")
+            )
+        ]
+    )
+    
+    # Get BMI category and color
+    if bmi < 18.5:
+        category = "Underweight"
+        color = "#3B82F6"
+    elif bmi < 25:
+        category = "Normal"
+        color = "#10B981"
+    elif bmi < 30:
+        category = "Overweight"
+        color = "#F59E0B"
+    else:
+        category = "Obese"
+        color = "#DC2626"
+    
+    # Convert to JSON
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    
+    return jsonify({
+        'graph': graphJSON,
+        'bmi': round(bmi, 1),
+        'category': category,
+        'color': color,
+        'weight': latest_progress.weight,
+        'height': user.height
+    })
 
 @app.route('/api/chatbot', methods=['POST'])
 def chatbot_api():

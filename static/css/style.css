@@ -507,13 +507,14 @@ body {
     margin-bottom: 1rem;
     border-left: 4px solid var(--success-color);
     box-shadow: 0 4px 15px rgba(31, 41, 55, 0.08);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s ease;
     border: 1px solid var(--border-color);
+    position: relative;
 }
 
 .workout-session:hover {
-    transform: translateX(5px);
-    box-shadow: 0 6px 20px rgba(125, 25, 53, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(125, 25, 53, 0.15);
 }
 
 .workout-session.completed {
@@ -526,6 +527,72 @@ body {
 
 .workout-session.missed {
     border-left-color: var(--danger-color);
+}
+
+/* Workout session action buttons */
+.workout-session .btn-group {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.workout-session:hover .btn-group {
+    opacity: 1;
+}
+
+.workout-session .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    margin-left: 0.25rem;
+}
+
+.workout-session .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.workout-session .btn-outline-danger:hover {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+/* Workout session content styling */
+.workout-session h6 {
+    color: var(--dark-color);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.workout-session .small {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.workout-session .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .workout-session .btn-group {
+        opacity: 1; /* Always show buttons on mobile */
+    }
+    
+    .workout-session .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+    
+    .workout-session .text-end {
+        width: 100%;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+    }
 }
 
 /* Chat Messages */
