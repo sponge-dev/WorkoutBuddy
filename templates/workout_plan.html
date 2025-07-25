@@ -6,7 +6,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <h1 class="h2 mb-4">
-            <i class="fas fa-clipboard-list me-3"></i>AI Workout Plans
+            Training Program Management
         </h1>
     </div>
 </div>
@@ -17,7 +17,7 @@
         <div class="workout-plan-card">
             <div class="workout-plan-header text-center">
                 <h3 class="mb-0">
-                    <i class="fas fa-robot me-2"></i>Generate AI-Powered Workout Plan
+                    Intelligent Program Generation
                 </h3>
             </div>
             <div class="workout-plan-body">
@@ -347,20 +347,178 @@ function startPlan() {
 }
 
 function loadExistingPlans() {
-    // This would load existing plans from the database
-    // For now, show placeholder
     const plansContainer = document.getElementById('plansContainer');
     
-    // Simulate existing plans (in real implementation, this would fetch from API)
-    setTimeout(() => {
-        plansContainer.innerHTML = `
-            <div class="text-center text-muted py-5">
-                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-                <h5>No saved workout plans yet</h5>
-                <p>Generate your first AI-powered workout plan above!</p>
-            </div>
-        `;
-    }, 100);
+    fetch('/api/workout-plans')
+        .then(response => response.json())
+        .then(plans => {
+            if (plans.length === 0) {
+                plansContainer.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <h5>No Training Programs Available</h5>
+                        <p>Create your first personalized training program using the form above.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let plansHTML = '<div class="row">';
+            plans.forEach(plan => {
+                const createdDate = new Date(plan.created_at).toLocaleDateString();
+                plansHTML += `
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">${plan.name}</h6>
+                                <span class="badge badge-${plan.goal_type === 'bulk' ? 'success' : plan.goal_type === 'cut' ? 'warning' : 'primary'}">${plan.goal_type || 'General'}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text small text-muted mb-2">
+                                    <i class="fas fa-calendar-alt"></i> Created: ${createdDate}
+                                </p>
+                                <p class="card-text small text-muted mb-2">
+                                    <i class="fas fa-clock"></i> ${plan.duration_weeks} weeks, ${plan.days_per_week} days/week
+                                </p>
+                                <div class="workout-plan-preview small" style="max-height: 100px; overflow-y: auto;">
+                                    ${plan.description.substring(0, 200)}...
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="row g-1">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-primary btn-sm w-100" onclick="viewPlan(${plan.id})">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-success btn-sm w-100" onclick="startSavedPlan(${plan.id})">
+                                            <i class="fas fa-play"></i> Start
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-info btn-sm w-100" onclick="downloadPDF(${plan.id})">
+                                            <i class="fas fa-download"></i> PDF
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-danger btn-sm w-100" onclick="deletePlan(${plan.id}, '${plan.name}')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            plansHTML += '</div>';
+            plansContainer.innerHTML = plansHTML;
+        })
+        .catch(error => {
+            console.error('Error loading plans:', error);
+            plansContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    Unable to load training programs. Please refresh the page and try again.
+                </div>
+            `;
+        });
+}
+
+function viewPlan(planId) {
+    fetch(`/api/workout-plans`)
+        .then(response => response.json())
+        .then(plans => {
+            const plan = plans.find(p => p.id === planId);
+            if (plan) {
+                document.getElementById('planContent').innerHTML = formatPlanText(plan.description);
+                document.getElementById('planResult').style.display = 'block';
+                document.getElementById('planResult').scrollIntoView({ behavior: 'smooth' });
+                
+                // Set current plan for actions
+                currentPlan = {
+                    plan_id: plan.id,
+                    goal_type: plan.goal_type,
+                    content: plan.description
+                };
+            }
+        })
+        .catch(error => {
+            console.error('Error viewing plan:', error);
+            alert('Error loading workout plan');
+        });
+}
+
+function startSavedPlan(planId) {
+    const today = new Date().toISOString().split('T')[0];
+    const sessionData = {
+        name: 'Day 1 - Saved Workout Plan',
+        date: today,
+        workout_plan_id: planId,
+        notes: 'Started saved workout plan'
+    };
+    
+    fetch('/api/workout-sessions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert('Workout plan started! Good luck with your training!');
+            window.location.href = '/dashboard';
+        }
+    })
+    .catch(error => {
+        console.error('Error starting plan:', error);
+        alert('Error starting plan. Please try again.');
+    });
+}
+
+function downloadPDF(planId) {
+    window.open(`/api/workout-plans/${planId}/pdf`, '_blank');
+}
+
+function deletePlan(planId, planName) {
+    // Show confirmation dialog
+    const confirmMessage = `Are you sure you want to delete the workout plan "${planName}"?\n\nThis action cannot be undone and will also remove any associated workout sessions.`;
+    
+    if (confirm(confirmMessage)) {
+        // Show loading state
+        const deleteButton = event.target.closest('button');
+        const originalContent = deleteButton.innerHTML;
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        deleteButton.disabled = true;
+        
+        fetch(`/api/workout-plans/${planId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                // Show success message
+                alert('Workout plan deleted successfully!');
+                
+                // Reload the plans list
+                loadExistingPlans();
+            } else {
+                throw new Error(data.error || 'Failed to delete workout plan');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting plan:', error);
+            alert(`Error deleting workout plan: ${error.message || 'Please try again.'}`);
+            
+            // Restore button state
+            deleteButton.innerHTML = originalContent;
+            deleteButton.disabled = false;
+        });
+    }
 }
 
 function setupBodyDiagram() {

@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import json
-import openai
+from openai import OpenAI
 import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -16,11 +16,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 CORS(app)
 
-# Load API keys
+# Load API keys and initialize OpenAI client
 with open('api_keys.json', 'r') as f:
     api_keys = json.load(f)
 
-openai.api_key = api_keys['OPENAI_API_KEY']
+openai_client = OpenAI(api_key=api_keys['OPENAI_API_KEY'])
 
 # Database Models
 class User(db.Model):
@@ -255,34 +255,51 @@ def generate_workout_plan():
     
     # Prepare context for OpenAI
     context = f"""
-    Create a detailed workout plan for a {user.gender} user with the following profile:
-    - Age: {user.age}
-    - Height: {user.height}cm
-    - Current weight: {latest_progress.weight if latest_progress else 'Not provided'}kg
-    - Fitness level: {user.fitness_level}
-    - Goal: {active_goal.goal_type if active_goal else data.get('goal_type', 'general fitness')}
-    - Workout frequency: {active_goal.workout_frequency if active_goal else data.get('frequency', 3)} days per week
-    - Session duration: {active_goal.workout_duration if active_goal else data.get('duration', 60)} minutes
-    - Available equipment: {json.loads(active_goal.equipment_available) if active_goal else data.get('equipment', ['bodyweight'])}
+    TRAINING PROGRAM SPECIFICATIONS
     
-    Please provide a structured workout plan that includes:
-    1. Weekly schedule with specific days
-    2. Exercises for each day with sets, reps, and rest periods
-    3. Progressive overload suggestions
-    4. Tips for optimal results
+    Client Profile:
+    • Demographics: {user.gender}, {user.age} years, {user.height}cm
+    • Current Weight: {latest_progress.weight if latest_progress else 'Baseline required'}kg
+    • Experience Level: {user.fitness_level}
+    • Primary Objective: {active_goal.goal_type if active_goal else data.get('goal_type', 'general fitness')}
     
-    Format the response as a detailed plan that's easy to follow.
+    Program Parameters:
+    • Training Frequency: {active_goal.workout_frequency if active_goal else data.get('frequency', 3)} sessions per week
+    • Session Duration: {active_goal.workout_duration if active_goal else data.get('duration', 60)} minutes
+    • Available Equipment: {json.loads(active_goal.equipment_available) if active_goal else data.get('equipment', ['bodyweight'])}
+    
+    Required Output Format:
+    
+    PROGRAM OVERVIEW
+    [Brief program description and periodization approach]
+    
+    WEEKLY TRAINING SCHEDULE
+    [Specific day assignments and session types]
+    
+    DETAILED WORKOUT SESSIONS
+    Day 1: [Session Name]
+    • Exercise 1: [Name] - [Sets] x [Reps] @ [Intensity/Weight] | Rest: [Time]
+    • Exercise 2: [Name] - [Sets] x [Reps] @ [Intensity/Weight] | Rest: [Time]
+    [Continue for all exercises]
+    
+    [Repeat for each training day]
+    
+    PROGRESSION PROTOCOL
+    [Specific progression methods and timelines]
+    
+    PERFORMANCE NOTES
+    [Technical cues and execution guidelines]
     """
     
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
+        response = openai_client.chat.completions.create(
+            model="gpt-4.1",
             messages=[
-                {"role": "system", "content": "You are an expert fitness trainer and nutritionist with deep knowledge of exercise science, anatomy, and personalized workout programming."},
+                {"role": "system", "content": "You are a professional fitness programming specialist. Generate structured workout plans in a professional format without conversational language. Respond with only the workout plan content, structured with clear headings, exercise details, and programming parameters. Do not include phrases like 'Sure, here's a plan' or similar conversational text. Format your response as a clean, professional training program."},
                 {"role": "user", "content": context}
             ],
-            max_tokens=2000,
-            temperature=0.7
+            max_tokens=2500,
+            temperature=0.3
         )
         
         workout_plan_text = response.choices[0].message.content
@@ -322,6 +339,35 @@ def get_workout_plans():
         'created_at': p.created_at.isoformat(),
         'is_active': p.is_active
     } for p in plans])
+
+@app.route('/api/workout-plans/<int:plan_id>', methods=['DELETE'])
+def delete_workout_plan(plan_id):
+    user_id = session.get('user_id', 1)
+    plan = WorkoutPlan.query.filter_by(id=plan_id, user_id=user_id).first()
+    
+    if not plan:
+        return jsonify({'error': 'Workout plan not found'}), 404
+    
+    try:
+        # Also delete any workout sessions associated with this plan
+        associated_sessions = WorkoutSession.query.filter_by(workout_plan_id=plan_id, user_id=user_id).all()
+        for session in associated_sessions:
+            # Delete workout exercises for each session
+            WorkoutExercise.query.filter_by(workout_session_id=session.id).delete()
+            db.session.delete(session)
+        
+        # Delete the plan itself
+        db.session.delete(plan)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Workout plan deleted successfully',
+            'deleted_plan_id': plan_id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to delete workout plan: {str(e)}'}), 500
 
 @app.route('/api/workout-plans/<int:plan_id>/pdf', methods=['GET'])
 def export_workout_plan_pdf(plan_id):
@@ -420,6 +466,91 @@ def workout_sessions_api():
         'notes': s.notes
     } for s in sessions])
 
+@app.route('/api/chatbot', methods=['POST'])
+def chatbot_api():
+    user_id = session.get('user_id', 1)
+    data = request.json
+    
+    if not data or 'message' not in data:
+        return jsonify({'error': 'Message is required'}), 400
+    
+    # Get user context
+    user = User.query.get(user_id)
+    latest_progress = Progress.query.filter_by(user_id=user_id).order_by(Progress.date.desc()).first()
+    active_goal = Goal.query.filter_by(user_id=user_id, is_active=True).first()
+    recent_sessions = WorkoutSession.query.filter_by(user_id=user_id).order_by(WorkoutSession.date.desc()).limit(5).all()
+    
+    # Build context for AI
+    context = f"""
+    You are a professional exercise physiologist and training consultant. Provide evidence-based responses to fitness, exercise, and training inquiries. Maintain a professional tone while being helpful and informative.
+    
+    Client Profile:
+    • Individual: {user.name if user else 'Client'}
+    • Demographics: {user.age if user else 'Age not specified'} years, {user.height if user else 'Height not specified'}cm, {user.gender if user else 'Gender not specified'}
+    • Experience Level: {user.fitness_level if user else 'Assessment required'}
+    • Current Status: {latest_progress.weight if latest_progress else 'Baseline assessment pending'}kg
+    • Training Objective: {active_goal.goal_type if active_goal else 'Goals to be established'}
+    • Recent Activity: {len(recent_sessions)} training sessions completed
+    
+    Provide concise, scientifically-supported guidance. Focus on practical application and safety considerations.
+    """
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4.1",
+            messages=[
+                {"role": "system", "content": context},
+                {"role": "user", "content": data['message']}
+            ],
+            max_tokens=600,
+            temperature=0.4
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        return jsonify({
+            'response': ai_response,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get AI response: {str(e)}'}), 500
+
+@app.route('/api/log-past-workout', methods=['POST'])
+def log_past_workout():
+    user_id = session.get('user_id', 1)
+    data = request.json
+    
+    required_fields = ['name', 'date']
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Name and date are required'}), 400
+    
+    try:
+        workout_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        
+        session_obj = WorkoutSession(
+            user_id=user_id,
+            workout_plan_id=data.get('workout_plan_id'),
+            date=workout_date,
+            name=data['name'],
+            duration_minutes=data.get('duration_minutes'),
+            calories_burned=data.get('calories_burned'),
+            notes=data.get('notes', ''),
+            completed=True  # Past workouts are completed by definition
+        )
+        db.session.add(session_obj)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Past workout logged successfully',
+            'session_id': session_obj.id
+        })
+        
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Failed to log workout: {str(e)}'}), 500
+
 @app.route('/api/statistics')
 def statistics_api():
     user_id = session.get('user_id', 1)
@@ -448,7 +579,8 @@ def statistics_api():
         'total_minutes': total_minutes,
         'average_duration': round(avg_duration, 1),
         'weight_progress': weight_data,
-        'monthly_workouts': dict(monthly_workouts)
+        'monthly_workouts': dict(monthly_workouts),
+        'database_location': 'workoutbot.db (in project root directory)'
     })
 
 # Initialize database

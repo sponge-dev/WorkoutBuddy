@@ -6,7 +6,7 @@
 <div class="row mb-4">
     <div class="col-12">
         <h1 class="h2 mb-4">
-            <i class="fas fa-chart-line me-3"></i>Fitness Dashboard
+            Performance Dashboard
         </h1>
     </div>
 </div>
@@ -46,7 +46,7 @@
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-weight me-2"></i>Weight Progress
+                    Weight Progress
                 </h5>
             </div>
             <div class="card-body">
@@ -62,7 +62,7 @@
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-plus me-2"></i>Log Today's Progress
+                    Daily Progress Entry
                 </h5>
             </div>
             <div class="card-body">
@@ -77,10 +77,10 @@
                     </div>
                     <div class="mb-3">
                         <label for="todayNotes" class="form-label">Notes</label>
-                        <textarea class="form-control" id="todayNotes" rows="2" placeholder="How are you feeling?"></textarea>
+                        <textarea class="form-control" id="todayNotes" rows="2" placeholder="Additional observations"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-save me-2"></i>Save Progress
+                        Submit Data
                     </button>
                 </form>
             </div>
@@ -92,7 +92,7 @@
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-calendar-alt me-2"></i>Monthly Workout Frequency
+                    Training Frequency Analysis
                 </h5>
             </div>
             <div class="card-body">
@@ -108,7 +108,7 @@
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-history me-2"></i>Recent Workouts
+                    Recent Training Sessions
                 </h5>
             </div>
             <div class="card-body">
@@ -127,7 +127,7 @@
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-ruler me-2"></i>Body Measurements
+                    Anthropometric Data
                 </h5>
             </div>
             <div class="card-body">
@@ -143,7 +143,7 @@
         <div class="dashboard-card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="fas fa-target me-2"></i>Goals Progress
+                    Objective Tracking
                 </h5>
             </div>
             <div class="card-body">
@@ -158,21 +158,89 @@
     </div>
 </div>
 
+<!-- Chatbot and Past Workout Section -->
+<div class="row g-4 mt-4">
+    <!-- AI Fitness Coach Chatbot -->
+    <div class="col-lg-6">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    Training Consultation
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="chatMessages" class="chat-container mb-3" style="height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                    <div class="text-center text-muted">
+                        <p>Training guidance and exercise consultation available</p>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="chatInput" placeholder="Enter your training question..." onkeypress="handleChatKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendChatMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Log Past Workout -->
+    <div class="col-lg-6">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    Historical Session Entry
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="pastWorkoutForm">
+                    <div class="mb-3">
+                        <label for="pastWorkoutName" class="form-label">Workout Name</label>
+                        <input type="text" class="form-control" id="pastWorkoutName" required placeholder="e.g., Morning Run">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label for="pastWorkoutDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="pastWorkoutDate" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="pastWorkoutDuration" class="form-label">Duration (min)</label>
+                            <input type="number" class="form-control" id="pastWorkoutDuration" placeholder="60">
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label for="pastWorkoutNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="pastWorkoutNotes" rows="2" placeholder="Session summary and observations"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        Submit Entry
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Actions Row -->
 <div class="row g-4 mt-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <button class="btn btn-success w-100 py-3" onclick="window.location.href='/workout-plan'">
-            <i class="fas fa-plus-circle me-2"></i>Generate New Workout Plan
+            Create Training Program
         </button>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <button class="btn btn-primary w-100 py-3" onclick="window.location.href='/progress'">
             <i class="fas fa-chart-bar me-2"></i>View Detailed Progress
         </button>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <button class="btn btn-warning w-100 py-3" data-bs-toggle="modal" data-bs-target="#workoutModal">
             <i class="fas fa-play me-2"></i>Start Workout Session
+        </button>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-info w-100 py-3" onclick="showDatabaseInfo()">
+            <i class="fas fa-database me-2"></i>Database Info
         </button>
     </div>
 </div>
@@ -238,6 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up event listeners
     document.getElementById('quickProgressForm').addEventListener('submit', saveQuickProgress);
     document.getElementById('startWorkoutBtn').addEventListener('click', startWorkoutSession);
+    document.getElementById('pastWorkoutForm').addEventListener('submit', logPastWorkout);
 });
 
 function loadDashboardData() {
@@ -571,6 +640,149 @@ function startWorkoutSession() {
 function calculateBMI(weight, height) {
     const heightInMeters = height / 100;
     return Math.round(weight / (heightInMeters * heightInMeters) * 10) / 10;
+}
+
+// Chatbot functionality
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    const chatContainer = document.getElementById('chatMessages');
+    
+    // Clear welcome message if present
+    if (chatContainer.querySelector('.text-center')) {
+        chatContainer.innerHTML = '';
+    }
+    
+    // Add user message
+    addChatMessage('user', message);
+    input.value = '';
+    
+    // Add loading message
+    addChatMessage('bot', '<i class="fas fa-spinner fa-spin"></i> Thinking...', 'thinking');
+    
+    // Send to API
+    fetch('/api/chatbot', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove thinking message
+        const thinkingMsg = chatContainer.querySelector('.thinking');
+        if (thinkingMsg) thinkingMsg.remove();
+        
+        if (data.response) {
+            addChatMessage('bot', data.response);
+        } else {
+            addChatMessage('bot', 'Sorry, I encountered an error. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Chatbot error:', error);
+        const thinkingMsg = chatContainer.querySelector('.thinking');
+        if (thinkingMsg) thinkingMsg.remove();
+        addChatMessage('bot', 'Sorry, I\'m having trouble connecting. Please try again later.');
+    });
+}
+
+function addChatMessage(sender, message, className = '') {
+    const chatContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${sender} mb-2 ${className}`;
+    
+    const isUser = sender === 'user';
+    messageDiv.innerHTML = `
+        <div class="d-flex ${isUser ? 'justify-content-end' : 'justify-content-start'}">
+            <div class="message-bubble ${isUser ? 'user-message' : 'bot-message'}" style="
+                max-width: 80%; 
+                padding: 8px 12px; 
+                border-radius: 15px; 
+                background-color: ${isUser ? '#007bff' : '#f8f9fa'}; 
+                color: ${isUser ? 'white' : 'black'};
+                border: ${isUser ? 'none' : '1px solid #ddd'};
+            ">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Past workout logging
+function logPastWorkout(event) {
+    event.preventDefault();
+    
+    const workoutData = {
+        name: document.getElementById('pastWorkoutName').value,
+        date: document.getElementById('pastWorkoutDate').value,
+        duration_minutes: document.getElementById('pastWorkoutDuration').value ? parseInt(document.getElementById('pastWorkoutDuration').value) : null,
+        notes: document.getElementById('pastWorkoutNotes').value
+    };
+    
+    if (!workoutData.name || !workoutData.date) {
+        alert('Please fill in the workout name and date');
+        return;
+    }
+    
+    fetch('/api/log-past-workout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(workoutData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert('Past workout logged successfully!');
+            document.getElementById('pastWorkoutForm').reset();
+            loadDashboardData(); // Refresh recent workouts
+        } else {
+            alert(data.error || 'Error logging workout');
+        }
+    })
+    .catch(error => {
+        console.error('Error logging past workout:', error);
+        alert('Error logging workout. Please try again.');
+    });
+}
+
+// Database info
+function showDatabaseInfo() {
+    fetch('/api/statistics')
+        .then(response => response.json())
+        .then(data => {
+            const dbLocation = data.database_location || 'workoutbot.db (in project root directory)';
+            alert(`Database Information:
+            
+Location: ${dbLocation}
+
+The database contains all your:
+• User profile data
+• Progress tracking
+• Workout plans and sessions
+• Goals and measurements
+
+To backup your data, simply copy the workoutbot.db file to a safe location.`);
+        })
+        .catch(error => {
+            console.error('Error getting database info:', error);
+            alert('Database Location: workoutbot.db (in project root directory)');
+        });
 }
 </script>
 {% endblock %} 

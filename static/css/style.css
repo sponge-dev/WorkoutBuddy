@@ -1,21 +1,29 @@
-/* Custom CSS for WorkoutBot */
+/* Custom CSS for WorkoutBot - Modern Gray/Dark Maroon/Red Theme */
 
 :root {
-    --primary-color: #007bff;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #17a2b8;
-    --light-color: #f8f9fa;
-    --dark-color: #343a40;
+    --primary-color: #7D1935;        /* Dark maroon */
+    --primary-dark: #5D1128;         /* Darker maroon */
+    --secondary-color: #A8324B;      /* Darker red */
+    --accent-color: #B91C1C;         /* Deep red */
+    --success-color: #6B7280;        /* Modern gray-success */
+    --danger-color: #DC2626;         /* Modern red */
+    --warning-color: #F59E0B;        /* Amber warning */
+    --info-color: #8B5A3C;          /* Brownish info */
+    --light-color: #F9FAFB;          /* Very light gray */
+    --background-color: #F5F5F7;     /* Modern gray background */
+    --dark-color: #1F2937;           /* Charcoal gray */
+    --medium-gray: #6B7280;          /* Medium gray */
+    --border-color: #E5E7EB;         /* Light gray border */
+    --card-bg: #FFFFFF;              /* Pure white for cards */
+    --text-muted: #9CA3AF;           /* Muted text gray */
 }
 
 /* Main Layout */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: var(--background-color);
     padding-top: 76px; /* Account for fixed navbar */
+    color: var(--dark-color);
 }
 
 .main-content {
@@ -27,43 +35,53 @@ body {
 .navbar-brand {
     font-weight: 700;
     font-size: 1.5rem;
+    color: var(--primary-color) !important;
+}
+
+.navbar {
+    background: linear-gradient(135deg, var(--card-bg), var(--light-color)) !important;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 12px rgba(125, 25, 53, 0.1);
 }
 
 .navbar-nav .nav-link {
     font-weight: 500;
     transition: color 0.3s ease;
+    color: var(--dark-color) !important;
 }
 
 .navbar-nav .nav-link:hover {
-    color: #fff !important;
+    color: var(--primary-color) !important;
 }
 
 /* Feature Cards */
 .feature-card {
-    background: white;
+    background: var(--card-bg);
     padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(31, 41, 55, 0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     height: 100%;
+    border: 1px solid var(--border-color);
 }
 
 .feature-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 35px rgba(125, 25, 53, 0.15);
 }
 
 .feature-icon {
     width: 80px;
     height: 80px;
     margin: 0 auto 1.5rem;
-    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-size: 2rem;
+    box-shadow: 0 4px 15px rgba(125, 25, 53, 0.3);
 }
 
 .feature-card h5 {
@@ -73,23 +91,25 @@ body {
 }
 
 .feature-card p {
-    color: var(--secondary-color);
+    color: var(--medium-gray);
     margin-bottom: 0;
     line-height: 1.6;
 }
 
 /* Stats Cards */
 .stat-card {
-    background: white;
+    background: var(--card-bg);
     padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(31, 41, 55, 0.08);
     text-align: center;
     transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
 }
 
 .stat-card:hover {
     transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(125, 25, 53, 0.12);
 }
 
 .stat-number {
@@ -100,7 +120,7 @@ body {
 }
 
 .stat-label {
-    color: var(--secondary-color);
+    color: var(--medium-gray);
     font-weight: 500;
     text-transform: uppercase;
     font-size: 0.875rem;
@@ -109,19 +129,21 @@ body {
 
 /* Dashboard Cards */
 .dashboard-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(31, 41, 55, 0.08);
     overflow: hidden;
     transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
 }
 
 .dashboard-card:hover {
     transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(125, 25, 53, 0.12);
 }
 
 .dashboard-card .card-header {
-    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
     border: none;
     padding: 1.5rem;
@@ -147,10 +169,11 @@ body {
 
 /* Progress Entry Form */
 .progress-form {
-    background: white;
-    border-radius: 15px;
+    background: var(--card-bg);
+    border-radius: 16px;
     padding: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(31, 41, 55, 0.08);
+    border: 1px solid var(--border-color);
 }
 
 .measurement-input {
@@ -165,20 +188,21 @@ body {
 
 /* Workout Plan Cards */
 .workout-plan-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(31, 41, 55, 0.08);
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
 }
 
 .workout-plan-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 12px 35px rgba(125, 25, 53, 0.15);
 }
 
 .workout-plan-header {
-    background: linear-gradient(135deg, var(--success-color), #1e7e34);
+    background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
     color: white;
     padding: 1.5rem;
 }
@@ -189,9 +213,10 @@ body {
 
 .workout-day {
     background: var(--light-color);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
 }
 
 .workout-day h6 {
@@ -201,11 +226,12 @@ body {
 }
 
 .exercise-item {
-    background: white;
-    border-radius: 8px;
+    background: var(--card-bg);
+    border-radius: 10px;
     padding: 1rem;
     margin-bottom: 0.5rem;
     border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 8px rgba(31, 41, 55, 0.05);
 }
 
 .exercise-name {
@@ -214,7 +240,7 @@ body {
 }
 
 .exercise-details {
-    color: var(--secondary-color);
+    color: var(--medium-gray);
     font-size: 0.875rem;
     margin-top: 0.25rem;
 }
@@ -241,56 +267,120 @@ body {
 
 /* Buttons */
 .btn {
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 500;
     padding: 0.75rem 1.5rem;
     transition: all 0.3s ease;
+    border: none;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color), #0056b3);
-    border: none;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #0056b3, #004494);
+    background: linear-gradient(135deg, var(--primary-dark), #4A0F1F);
     transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(125, 25, 53, 0.3);
 }
 
 .btn-success {
-    background: linear-gradient(135deg, var(--success-color), #1e7e34);
-    border: none;
+    background: linear-gradient(135deg, var(--success-color), var(--medium-gray));
+    color: white;
 }
 
 .btn-success:hover {
-    background: linear-gradient(135deg, #1e7e34, #155724);
+    background: linear-gradient(135deg, var(--medium-gray), #4B5563);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+    color: white;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, var(--accent-color), #991B1B);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(168, 50, 75, 0.3);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, var(--info-color), #92400E);
+    color: white;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #92400E, #78350F);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(139, 90, 60, 0.3);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-outline-success {
+    border: 2px solid var(--success-color);
+    color: var(--success-color);
+    background: transparent;
+}
+
+.btn-outline-success:hover {
+    background: var(--success-color);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-outline-info {
+    border: 2px solid var(--info-color);
+    color: var(--info-color);
+    background: transparent;
+}
+
+.btn-outline-info:hover {
+    background: var(--info-color);
+    color: white;
     transform: translateY(-2px);
 }
 
 /* Forms */
 .form-control, .form-select {
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
     padding: 0.75rem 1rem;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-color: var(--card-bg);
 }
 
 .form-control:focus, .form-select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+    box-shadow: 0 0 0 0.2rem rgba(125, 25, 53, 0.1);
+    background-color: var(--card-bg);
 }
 
 /* Modal Improvements */
 .modal-content {
-    border-radius: 15px;
+    border-radius: 16px;
     border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 50px rgba(31, 41, 55, 0.2);
+    background: var(--card-bg);
 }
 
 .modal-header {
-    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
-    border-radius: 15px 15px 0 0;
+    border-radius: 16px 16px 0 0;
 }
 
 .modal-header .btn-close {
@@ -299,9 +389,10 @@ body {
 
 /* Hero Section */
 .hero-section {
-    background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(0, 86, 179, 0.05));
+    background: linear-gradient(135deg, rgba(125, 25, 53, 0.08), rgba(168, 50, 75, 0.05));
     border-radius: 20px;
     margin-top: 1rem;
+    border: 1px solid rgba(125, 25, 53, 0.1);
 }
 
 /* Loading States */
@@ -313,6 +404,25 @@ body {
 .spinner-border-sm {
     width: 1rem;
     height: 1rem;
+}
+
+/* Badges */
+.badge {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background-color: var(--success-color) !important;
+}
+
+.badge-warning {
+    background-color: var(--warning-color) !important;
+    color: var(--dark-color) !important;
+}
+
+.badge-primary {
+    background-color: var(--primary-color) !important;
 }
 
 /* Responsive Design */
@@ -381,27 +491,29 @@ body {
 .progress {
     height: 10px;
     border-radius: 10px;
-    background-color: #e9ecef;
+    background-color: var(--border-color);
 }
 
 .progress-bar {
     border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
 }
 
 /* Workout Session Cards */
 .workout-session {
-    background: white;
-    border-radius: 10px;
+    background: var(--card-bg);
+    border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
     border-left: 4px solid var(--success-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+    box-shadow: 0 4px 15px rgba(31, 41, 55, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
 }
 
 .workout-session:hover {
     transform: translateX(5px);
+    box-shadow: 0 6px 20px rgba(125, 25, 53, 0.1);
 }
 
 .workout-session.completed {
@@ -416,13 +528,43 @@ body {
     border-left-color: var(--danger-color);
 }
 
+/* Chat Messages */
+.chat-container {
+    background: var(--light-color);
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+}
+
+.user-message {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)) !important;
+    color: white !important;
+}
+
+.bot-message {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--dark-color) !important;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 12px;
+    border: none;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.05));
+    color: var(--danger-color);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--light-color);
     border-radius: 10px;
 }
 
@@ -432,5 +574,18 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #0056b3;
+    background: var(--primary-dark);
+}
+
+/* Text Colors */
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.text-success {
+    color: var(--success-color) !important;
 } 
