@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}Workout Plans - WorkoutBot{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h2 mb-4">
+            <i class="fas fa-clipboard-list me-3"></i>AI Workout Plans
+        </h1>
+    </div>
+</div>
+
+<!-- Generate New Plan Section -->
+<div class="row mb-5">
+    <div class="col-lg-8 mx-auto">
+        <div class="workout-plan-card">
+            <div class="workout-plan-header text-center">
+                <h3 class="mb-0">
+                    <i class="fas fa-robot me-2"></i>Generate AI-Powered Workout Plan
+                </h3>
+            </div>
+            <div class="workout-plan-body">
+                <form id="generatePlanForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="planGoalType" class="form-label">Primary Goal</label>
+                            <select class="form-select" id="planGoalType" required>
+                                <option value="">Select Goal</option>
+                                <option value="bulk">Bulk (Build Muscle)</option>
+                                <option value="cut">Cut (Lose Fat)</option>
+                                <option value="tone">Tone (Lean & Defined)</option>
+                                <option value="strength">Strength Training</option>
+                                <option value="endurance">Endurance & Cardio</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="planDuration" class="form-label">Plan Duration</label>
+                            <select class="form-select" id="planDuration" required>
+                                <option value="4">4 weeks</option>
+                                <option value="8" selected>8 weeks</option>
+                                <option value="12">12 weeks</option>
+                                <option value="16">16 weeks</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="planFrequency" class="form-label">Workouts per Week</label>
+                            <select class="form-select" id="planFrequency" required>
+                                <option value="2">2 days</option>
+                                <option value="3" selected>3 days</option>
+                                <option value="4">4 days</option>
+                                <option value="5">5 days</option>
+                                <option value="6">6 days</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="planSessionDuration" class="form-label">Session Duration</label>
+                            <select class="form-select" id="planSessionDuration" required>
+                                <option value="30">30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="60" selected>60 minutes</option>
+                                <option value="90">90 minutes</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Available Equipment</label>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="bodyweight" id="plan_eq_bodyweight" checked>
+                                        <label class="form-check-label" for="plan_eq_bodyweight">Bodyweight</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="dumbbells" id="plan_eq_dumbbells">
+                                        <label class="form-check-label" for="plan_eq_dumbbells">Dumbbells</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="barbell" id="plan_eq_barbell">
+                                        <label class="form-check-label" for="plan_eq_barbell">Barbell</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="resistance_bands" id="plan_eq_bands">
+                                        <label class="form-check-label" for="plan_eq_bands">Resistance Bands</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="pull_up_bar" id="plan_eq_pullup">
+                                        <label class="form-check-label" for="plan_eq_pullup">Pull-up Bar</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="gym_access" id="plan_eq_gym">
+                                        <label class="form-check-label" for="plan_eq_gym">Full Gym Access</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-magic me-2"></i>Generate AI Workout Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="text-center py-5" style="display: none;">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <h5 class="mt-3">AI is crafting your perfect workout plan...</h5>
+    <p class="text-muted">This may take a few moments</p>
+</div>
+
+<!-- Generated Plan Display -->
+<div id="generatedPlan" style="display: none;">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="workout-plan-card">
+                <div class="workout-plan-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0" id="planTitle">Your AI-Generated Workout Plan</h4>
+                        <button class="btn btn-light btn-sm" onclick="savePlanAsPDF()">
+                            <i class="fas fa-download me-1"></i>Save as PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="workout-plan-body">
+                    <div id="planContent">
+                        <!-- AI-generated plan will be inserted here -->
+                    </div>
+                    <div class="text-center mt-4">
+                        <button class="btn btn-primary me-3" onclick="savePlan()">
+                            <i class="fas fa-save me-2"></i>Save This Plan
+                        </button>
+                        <button class="btn btn-success" onclick="startPlan()">
+                            <i class="fas fa-play me-2"></i>Start This Plan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Existing Plans -->
+<div class="row" id="existingPlans">
+    <div class="col-12">
+        <h3 class="mb-4">
+            <i class="fas fa-folder-open me-2"></i>Your Workout Plans
+        </h3>
+        <div id="plansContainer">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                <h5>No workout plans yet</h5>
+                <p>Generate your first AI-powered workout plan above!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Body Diagram Modal -->
+<div class="modal fade" id="bodyDiagramModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user me-2"></i>Muscle Groups Targeted
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="bodyDiagram">
+                    <!-- SVG body diagram will be inserted here -->
+                    <svg width="300" height="500" viewBox="0 0 300 500" class="body-diagram">
+                        <!-- Simplified human body outline -->
+                        <ellipse cx="150" cy="60" rx="35" ry="45" fill="#e9ecef" class="body-part" data-group="head"/>
+                        <rect x="115" y="100" width="70" height="100" rx="10" fill="#e9ecef" class="body-part" data-group="chest"/>
+                        <rect x="100" y="100" width="25" height="80" rx="12" fill="#e9ecef" class="body-part" data-group="shoulders"/>
+                        <rect x="175" y="100" width="25" height="80" rx="12" fill="#e9ecef" class="body-part" data-group="shoulders"/>
+                        <rect x="85" y="130" width="20" height="70" rx="10" fill="#e9ecef" class="body-part" data-group="arms"/>
+                        <rect x="195" y="130" width="20" height="70" rx="10" fill="#e9ecef" class="body-part" data-group="arms"/>
+                        <rect x="125" y="200" width="50" height="80" rx="10" fill="#e9ecef" class="body-part" data-group="core"/>
+                        <rect x="115" y="280" width="35" height="120" rx="15" fill="#e9ecef" class="body-part" data-group="legs"/>
+                        <rect x="150" y="280" width="35" height="120" rx="15" fill="#e9ecef" class="body-part" data-group="legs"/>
+                        <rect x="125" y="200" width="50" height="60" rx="10" fill="#e9ecef" class="body-part" data-group="back"/>
+                    </svg>
+                </div>
+                <div id="muscleGroupInfo" class="mt-4">
+                    <p class="text-muted">Hover over body parts to see which exercises target them</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPlan = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('generatePlanForm').addEventListener('submit', generateWorkoutPlan);
+    loadExistingPlans();
+    setupBodyDiagram();
+});
+
+function generateWorkoutPlan(event) {
+    event.preventDefault();
+    
+    // Get equipment selection
+    const equipment = [];
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+        if (checkbox.id.startsWith('plan_eq_')) {
+            equipment.push(checkbox.value);
+        }
+    });
+    
+    const planData = {
+        goal_type: document.getElementById('planGoalType').value,
+        duration_weeks: parseInt(document.getElementById('planDuration').value),
+        frequency: parseInt(document.getElementById('planFrequency').value),
+        duration: parseInt(document.getElementById('planSessionDuration').value),
+        equipment: equipment
+    };
+    
+    if (!planData.goal_type) {
+        alert('Please select a goal type');
+        return;
+    }
+    
+    // Show loading indicator
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('generatedPlan').style.display = 'none';
+    
+    // Scroll to loading indicator
+    document.getElementById('loadingIndicator').scrollIntoView({ behavior: 'smooth' });
+    
+    fetch('/api/generate-workout-plan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(planData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        
+        if (data.workout_plan) {
+            currentPlan = data;
+            displayGeneratedPlan(data.workout_plan);
+        } else {
+            throw new Error(data.error || 'Failed to generate workout plan');
+        }
+    })
+    .catch(error => {
+        document.getElementById('loadingIndicator').style.display = 'none';
+        console.error('Error generating plan:', error);
+        alert('Error generating workout plan: ' + error.message);
+    });
+}
+
+function displayGeneratedPlan(planText) {
+    // Format the AI-generated plan text
+    const formattedPlan = formatPlanText(planText);
+    
+    document.getElementById('planContent').innerHTML = formattedPlan;
+    document.getElementById('generatedPlan').style.display = 'block';
+    
+    // Scroll to the generated plan
+    document.getElementById('generatedPlan').scrollIntoView({ behavior: 'smooth' });
+}
+
+function formatPlanText(text) {
+    // Convert the AI text to formatted HTML
+    let formatted = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    // Wrap in paragraph tags
+    formatted = '<p>' + formatted + '</p>';
+    
+    // Style workout days
+    formatted = formatted.replace(/(Day \d+:.*?)(<br>|<\/p>)/g, '<h5 class="text-primary mt-4">$1</h5>');
+    formatted = formatted.replace(/(Week \d+:.*?)(<br>|<\/p>)/g, '<h4 class="text-success mt-4">$1</h4>');
+    
+    return formatted;
+}
+
+function savePlan() {
+    if (!currentPlan) {
+        alert('No plan to save');
+        return;
+    }
+    
+    alert('Plan saved successfully! You can view it in your saved plans below.');
+    loadExistingPlans();
+}
+
+function startPlan() {
+    if (!currentPlan) {
+        alert('No plan to start');
+        return;
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    const sessionData = {
+        name: 'Day 1 - ' + (currentPlan.goal_type || 'Workout'),
+        date: today,
+        workout_plan_id: currentPlan.plan_id,
+        notes: 'Starting new AI-generated workout plan'
+    };
+    
+    fetch('/api/workout-sessions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert('Workout plan started! Good luck with your training!');
+            window.location.href = '/dashboard';
+        }
+    })
+    .catch(error => {
+        console.error('Error starting plan:', error);
+        alert('Error starting plan. Please try again.');
+    });
+}
+
+function loadExistingPlans() {
+    // This would load existing plans from the database
+    // For now, show placeholder
+    const plansContainer = document.getElementById('plansContainer');
+    
+    // Simulate existing plans (in real implementation, this would fetch from API)
+    setTimeout(() => {
+        plansContainer.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                <h5>No saved workout plans yet</h5>
+                <p>Generate your first AI-powered workout plan above!</p>
+            </div>
+        `;
+    }, 100);
+}
+
+function setupBodyDiagram() {
+    const bodyParts = document.querySelectorAll('.body-part');
+    const muscleInfo = document.getElementById('muscleGroupInfo');
+    
+    const muscleGroups = {
+        head: 'Head & Neck - Neck strengthening exercises',
+        chest: 'Chest - Push-ups, bench press, chest flies',
+        shoulders: 'Shoulders - Shoulder press, lateral raises, front raises',
+        arms: 'Arms - Bicep curls, tricep dips, arm circles',
+        core: 'Core - Planks, crunches, Russian twists',
+        back: 'Back - Pull-ups, rows, deadlifts',
+        legs: 'Legs - Squats, lunges, calf raises'
+    };
+    
+    bodyParts.forEach(part => {
+        part.addEventListener('mouseenter', function() {
+            const group = this.dataset.group;
+            muscleInfo.innerHTML = `<strong>${muscleGroups[group]}</strong>`;
+            this.style.fill = '#007bff';
+        });
+        
+        part.addEventListener('mouseleave', function() {
+            this.style.fill = '#e9ecef';
+            muscleInfo.innerHTML = '<p class="text-muted">Hover over body parts to see which exercises target them</p>';
+        });
+    });
+}
+
+function savePlanAsPDF() {
+    // This would implement PDF generation
+    alert('PDF download feature coming soon!');
+}
+</script>
+{% endblock %} 

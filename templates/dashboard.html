@@ -1,0 +1,576 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - WorkoutBot{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h2 mb-4">
+            <i class="fas fa-chart-line me-3"></i>Fitness Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-number" id="totalWorkouts">-</div>
+            <div class="stat-label">Total Workouts</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-number" id="totalMinutes">-</div>
+            <div class="stat-label">Minutes Trained</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-number" id="currentWeight">-</div>
+            <div class="stat-label">Current Weight (kg)</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-number" id="currentBMI">-</div>
+            <div class="stat-label">Current BMI</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Dashboard Row -->
+<div class="row g-4">
+    <!-- Weight Progress Chart -->
+    <div class="col-lg-8">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-weight me-2"></i>Weight Progress
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Progress Entry -->
+    <div class="col-lg-4">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>Log Today's Progress
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="quickProgressForm">
+                    <div class="mb-3">
+                        <label for="todayWeight" class="form-label">Weight (kg)</label>
+                        <input type="number" class="form-control" id="todayWeight" step="0.1" placeholder="Enter weight">
+                    </div>
+                    <div class="mb-3">
+                        <label for="todayBodyFat" class="form-label">Body Fat %</label>
+                        <input type="number" class="form-control" id="todayBodyFat" step="0.1" placeholder="Optional">
+                    </div>
+                    <div class="mb-3">
+                        <label for="todayNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="todayNotes" rows="2" placeholder="How are you feeling?"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Save Progress
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Workout Frequency Chart -->
+    <div class="col-lg-6">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>Monthly Workout Frequency
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="frequencyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Workouts -->
+    <div class="col-lg-6">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Recent Workouts
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="recentWorkouts">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-dumbbell fa-2x mb-3"></i>
+                        <p>No recent workouts found</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Body Measurements -->
+    <div class="col-lg-6">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-ruler me-2"></i>Body Measurements
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="measurementsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Goals Progress -->
+    <div class="col-lg-6">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-target me-2"></i>Goals Progress
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="goalsProgress">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-bullseye fa-2x mb-3"></i>
+                        <p>Set up your goals to track progress</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Row -->
+<div class="row g-4 mt-4">
+    <div class="col-md-4">
+        <button class="btn btn-success w-100 py-3" onclick="window.location.href='/workout-plan'">
+            <i class="fas fa-plus-circle me-2"></i>Generate New Workout Plan
+        </button>
+    </div>
+    <div class="col-md-4">
+        <button class="btn btn-primary w-100 py-3" onclick="window.location.href='/progress'">
+            <i class="fas fa-chart-bar me-2"></i>View Detailed Progress
+        </button>
+    </div>
+    <div class="col-md-4">
+        <button class="btn btn-warning w-100 py-3" data-bs-toggle="modal" data-bs-target="#workoutModal">
+            <i class="fas fa-play me-2"></i>Start Workout Session
+        </button>
+    </div>
+</div>
+
+<!-- Workout Session Modal -->
+<div class="modal fade" id="workoutModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-play me-2"></i>Start Workout Session
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="workoutSessionForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="workoutName" class="form-label">Workout Name</label>
+                            <input type="text" class="form-control" id="workoutName" required placeholder="e.g., Upper Body Strength">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="workoutDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="workoutDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="estimatedDuration" class="form-label">Estimated Duration (minutes)</label>
+                            <input type="number" class="form-control" id="estimatedDuration" placeholder="60">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="estimatedCalories" class="form-label">Estimated Calories</label>
+                            <input type="number" class="form-control" id="estimatedCalories" placeholder="300">
+                        </div>
+                        <div class="col-12">
+                            <label for="workoutNotes" class="form-label">Pre-workout Notes</label>
+                            <textarea class="form-control" id="workoutNotes" rows="3" placeholder="How are you feeling? Any specific goals for today?"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="startWorkoutBtn">
+                    <i class="fas fa-play me-2"></i>Start Workout
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let weightChart, frequencyChart, measurementsChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default
+    document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
+    
+    // Load dashboard data
+    loadDashboardData();
+    
+    // Set up event listeners
+    document.getElementById('quickProgressForm').addEventListener('submit', saveQuickProgress);
+    document.getElementById('startWorkoutBtn').addEventListener('click', startWorkoutSession);
+});
+
+function loadDashboardData() {
+    // Load statistics
+    fetch('/api/statistics')
+        .then(response => response.json())
+        .then(data => {
+            updateQuickStats(data);
+            createWeightChart(data.weight_progress || []);
+            createFrequencyChart(data.monthly_workouts || {});
+        })
+        .catch(error => console.error('Error loading statistics:', error));
+    
+    // Load recent workouts
+    fetch('/api/workout-sessions')
+        .then(response => response.json())
+        .then(data => {
+            displayRecentWorkouts(data);
+        })
+        .catch(error => console.error('Error loading workouts:', error));
+    
+    // Load progress data for measurements
+    fetch('/api/progress')
+        .then(response => response.json())
+        .then(data => {
+            createMeasurementsChart(data);
+        })
+        .catch(error => console.error('Error loading progress:', error));
+    
+    // Load goals
+    fetch('/api/goals')
+        .then(response => response.json())
+        .then(data => {
+            displayGoalsProgress(data);
+        })
+        .catch(error => console.error('Error loading goals:', error));
+}
+
+function updateQuickStats(data) {
+    document.getElementById('totalWorkouts').textContent = data.total_workouts || 0;
+    document.getElementById('totalMinutes').textContent = data.total_minutes || 0;
+    
+    if (data.weight_progress && data.weight_progress.length > 0) {
+        const latestWeight = data.weight_progress[data.weight_progress.length - 1].weight;
+        document.getElementById('currentWeight').textContent = latestWeight;
+        
+        // Get user data for BMI calculation
+        fetch('/api/user')
+            .then(response => response.json())
+            .then(userData => {
+                if (userData.height) {
+                    const bmi = calculateBMI(latestWeight, userData.height);
+                    document.getElementById('currentBMI').textContent = bmi;
+                }
+            });
+    }
+}
+
+function createWeightChart(weightData) {
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    
+    if (weightChart) {
+        weightChart.destroy();
+    }
+    
+    weightChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: weightData.map(d => new Date(d.date).toLocaleDateString()),
+            datasets: [{
+                label: 'Weight (kg)',
+                data: weightData.map(d => d.weight),
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createFrequencyChart(monthlyData) {
+    const ctx = document.getElementById('frequencyChart').getContext('2d');
+    
+    if (frequencyChart) {
+        frequencyChart.destroy();
+    }
+    
+    const labels = Object.keys(monthlyData).sort();
+    const data = labels.map(month => monthlyData[month]);
+    
+    frequencyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.map(month => {
+                const date = new Date(month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            }),
+            datasets: [{
+                label: 'Workouts',
+                data: data,
+                backgroundColor: '#28a745',
+                borderColor: '#1e7e34',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createMeasurementsChart(progressData) {
+    const ctx = document.getElementById('measurementsChart').getContext('2d');
+    
+    if (measurementsChart) {
+        measurementsChart.destroy();
+    }
+    
+    const validData = progressData.filter(d => d.chest || d.waist || d.arms);
+    
+    if (validData.length === 0) {
+        ctx.canvas.parentElement.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-ruler fa-2x mb-3"></i>
+                <p>No measurements recorded yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    measurementsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: validData.map(d => new Date(d.date).toLocaleDateString()),
+            datasets: [
+                {
+                    label: 'Chest (cm)',
+                    data: validData.map(d => d.chest),
+                    borderColor: '#007bff',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Waist (cm)',
+                    data: validData.map(d => d.waist),
+                    borderColor: '#28a745',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Arms (cm)',
+                    data: validData.map(d => d.arms),
+                    borderColor: '#ffc107',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+}
+
+function displayRecentWorkouts(workouts) {
+    const container = document.getElementById('recentWorkouts');
+    
+    if (!workouts || workouts.length === 0) {
+        return;
+    }
+    
+    container.innerHTML = workouts.slice(0, 5).map(workout => `
+        <div class="workout-session ${workout.completed ? 'completed' : 'pending'}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${workout.name}</h6>
+                    <small class="text-muted">${new Date(workout.date).toLocaleDateString()}</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge ${workout.completed ? 'bg-success' : 'bg-warning'}">
+                        ${workout.completed ? 'Completed' : 'Pending'}
+                    </span>
+                    ${workout.duration_minutes ? `<div class="small text-muted">${workout.duration_minutes} min</div>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayGoalsProgress(goals) {
+    const container = document.getElementById('goalsProgress');
+    
+    if (!goals || goals.length === 0) {
+        return;
+    }
+    
+    const activeGoal = goals[0]; // Display first active goal
+    
+    container.innerHTML = `
+        <div class="mb-3">
+            <h6 class="text-primary">${activeGoal.goal_type.charAt(0).toUpperCase() + activeGoal.goal_type.slice(1)} Goal</h6>
+            <p class="mb-2">Target: ${activeGoal.target_weight ? activeGoal.target_weight + ' kg' : 'Not specified'}</p>
+            <p class="mb-2">Frequency: ${activeGoal.workout_frequency} days/week</p>
+            <p class="mb-2">Duration: ${activeGoal.workout_duration} minutes/session</p>
+        </div>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.location.href='/'">
+            <i class="fas fa-edit me-1"></i>Update Goals
+        </button>
+    `;
+}
+
+function saveQuickProgress(event) {
+    event.preventDefault();
+    
+    const weight = document.getElementById('todayWeight').value;
+    const bodyFat = document.getElementById('todayBodyFat').value;
+    const notes = document.getElementById('todayNotes').value;
+    
+    if (!weight) {
+        alert('Please enter your weight');
+        return;
+    }
+    
+    const progressData = {
+        weight: parseFloat(weight),
+        body_fat_percentage: bodyFat ? parseFloat(bodyFat) : null,
+        notes: notes
+    };
+    
+    fetch('/api/progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(progressData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert('Progress saved successfully!');
+            document.getElementById('quickProgressForm').reset();
+            loadDashboardData(); // Refresh charts
+        }
+    })
+    .catch(error => {
+        console.error('Error saving progress:', error);
+        alert('Error saving progress. Please try again.');
+    });
+}
+
+function startWorkoutSession() {
+    const sessionData = {
+        name: document.getElementById('workoutName').value,
+        date: document.getElementById('workoutDate').value,
+        duration_minutes: document.getElementById('estimatedDuration').value ? parseInt(document.getElementById('estimatedDuration').value) : null,
+        calories_burned: document.getElementById('estimatedCalories').value ? parseInt(document.getElementById('estimatedCalories').value) : null,
+        notes: document.getElementById('workoutNotes').value,
+        completed: false
+    };
+    
+    if (!sessionData.name || !sessionData.date) {
+        alert('Please fill in the workout name and date');
+        return;
+    }
+    
+    fetch('/api/workout-sessions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            bootstrap.Modal.getInstance(document.getElementById('workoutModal')).hide();
+            alert('Workout session started! Good luck with your training!');
+            loadDashboardData(); // Refresh recent workouts
+        }
+    })
+    .catch(error => {
+        console.error('Error starting workout:', error);
+        alert('Error starting workout session. Please try again.');
+    });
+}
+
+function calculateBMI(weight, height) {
+    const heightInMeters = height / 100;
+    return Math.round(weight / (heightInMeters * heightInMeters) * 10) / 10;
+}
+</script>
+{% endblock %} 
