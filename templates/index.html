@@ -10,7 +10,7 @@
             <p class="lead mb-4">
                 Advanced workout planning, comprehensive progress tracking, and data-driven fitness optimization powered by artificial intelligence
             </p>
-            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#userSetupModal">
+            <button class="btn btn-primary btn-lg" id="setupBtn">
                 Create Profile
             </button>
         </div>
@@ -90,7 +90,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="userModalTitle">
                     User Profile Configuration
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -109,6 +109,10 @@
                         <div class="col-md-6">
                             <label for="userHeight" class="form-label">Height (inches)</label>
                             <input type="number" class="form-control" id="userHeight" min="48" max="84" step="0.5" placeholder="e.g., 70 for 5'10&quot;" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="userWeight" class="form-label">Current Weight (lbs)</label>
+                            <input type="number" class="form-control" id="userWeight" min="80" max="500" step="0.1" placeholder="Enter current weight" required>
                         </div>
                         <div class="col-md-6">
                             <label for="userGender" class="form-label">Gender</label>
@@ -134,7 +138,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveUserBtn">
-                    <i class="fas fa-save me-2"></i>Save Profile
+                    <i class="fas fa-save me-2"></i><span id="saveUserBtnText">Save Profile</span>
                 </button>
             </div>
         </div>
@@ -249,6 +253,22 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserData();
     loadQuickStats();
     
+    // Check if we should open edit profile modal (from navigation redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('edit_profile') === 'true') {
+        setTimeout(() => {
+            openEditProfile();
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 500);
+    }
+    
+    // Setup button click handler
+    document.getElementById('setupBtn').addEventListener('click', function() {
+        resetModalForNewUser();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('userSetupModal')).show();
+    });
+    
     // Save user profile
     document.getElementById('saveUserBtn').addEventListener('click', saveUserProfile);
     
@@ -265,6 +285,7 @@ function loadUserData() {
                     `<i class="fas fa-user-circle me-3"></i>Welcome back, ${data.name}!`;
                 document.querySelector('.hero-section .btn').innerHTML = 
                     '<i class="fas fa-cog me-2"></i>Update Profile';
+                document.querySelector('.hero-section .btn').onclick = openEditProfile;
                 document.getElementById('quickStats').style.display = 'block';
             }
         })
@@ -298,16 +319,22 @@ function loadQuickStats() {
 }
 
 function saveUserProfile() {
+    const isEditing = document.getElementById('userSetupForm').dataset.editing === 'true';
+    
     const formData = {
         name: document.getElementById('userName').value,
         age: parseInt(document.getElementById('userAge').value),
         height: parseFloat(document.getElementById('userHeight').value),
+        weight: parseFloat(document.getElementById('userWeight').value),
         gender: document.getElementById('userGender').value,
         fitness_level: document.getElementById('fitnessLevel').value
     };
     
-    fetch('/api/user', {
-        method: 'POST',
+    const url = isEditing ? '/api/user/update' : '/api/user';
+    const method = isEditing ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
         headers: {
             'Content-Type': 'application/json',
         },
@@ -317,9 +344,15 @@ function saveUserProfile() {
     .then(data => {
         if (data.message) {
             bootstrap.Modal.getInstance(document.getElementById('userSetupModal')).hide();
-            setTimeout(() => {
-                bootstrap.Modal.getOrCreateInstance(document.getElementById('goalSetupModal')).show();
-            }, 500);
+            
+            if (isEditing) {
+                alert('Profile updated successfully!');
+                location.reload(); // Refresh to show updated data
+            } else {
+                setTimeout(() => {
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('goalSetupModal')).show();
+                }, 500);
+            }
         }
     })
     .catch(error => {
@@ -368,6 +401,51 @@ function saveUserGoals() {
 function calculateBMI(weight, height) {
     // BMI = (weight in lbs / height in inches²) × 703
     return Math.round((weight / (height * height)) * 703 * 10) / 10;
+}
+
+function openEditProfile() {
+    // Load current user data and populate form
+    fetch('/api/user')
+        .then(response => response.json())
+        .then(userData => {
+            // Populate form fields
+            document.getElementById('userName').value = userData.name || '';
+            document.getElementById('userAge').value = userData.age || '';
+            document.getElementById('userHeight').value = userData.height || '';
+            document.getElementById('userGender').value = userData.gender || '';
+            document.getElementById('fitnessLevel').value = userData.fitness_level || '';
+            
+            // Get latest weight from progress
+            fetch('/api/progress')
+                .then(response => response.json())
+                .then(progressData => {
+                    if (progressData.length > 0) {
+                        const latestWeight = progressData[progressData.length - 1].weight;
+                        document.getElementById('userWeight').value = latestWeight || '';
+                    }
+                })
+                .catch(error => console.log('No progress data found'));
+            
+            // Set form to editing mode
+            document.getElementById('userSetupForm').dataset.editing = 'true';
+            document.getElementById('userModalTitle').textContent = 'Update Profile';
+            document.getElementById('saveUserBtnText').textContent = 'Update Profile';
+            
+            // Show modal
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('userSetupModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading user data:', error);
+            alert('Error loading profile data. Please try again.');
+        });
+}
+
+function resetModalForNewUser() {
+    // Reset form for new user creation
+    document.getElementById('userSetupForm').reset();
+    document.getElementById('userSetupForm').dataset.editing = 'false';
+    document.getElementById('userModalTitle').textContent = 'User Profile Configuration';
+    document.getElementById('saveUserBtnText').textContent = 'Save Profile';
 }
 </script>
 {% endblock %} 

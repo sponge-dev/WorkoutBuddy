@@ -152,6 +152,17 @@ def user_api():
         db.session.add(user)
         db.session.commit()
         session['user_id'] = user.id
+        
+        # Create initial progress entry with weight
+        if 'weight' in data and data['weight']:
+            initial_progress = Progress(
+                user_id=user.id,
+                weight=data['weight'],
+                date=datetime.now().date()
+            )
+            db.session.add(initial_progress)
+            db.session.commit()
+        
         return jsonify({'message': 'User created successfully', 'user_id': user.id})
     
     # GET request
@@ -167,6 +178,43 @@ def user_api():
             'fitness_level': user.fitness_level
         })
     return jsonify({'error': 'User not found'}), 404
+
+@app.route('/api/user/update', methods=['PUT'])
+def update_user():
+    user_id = session.get('user_id', 1)
+    user = db.session.get(User, user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    data = request.json
+    
+    # Update user fields
+    user.name = data.get('name', user.name)
+    user.height = data.get('height', user.height)
+    user.age = data.get('age', user.age)
+    user.gender = data.get('gender', user.gender)
+    user.fitness_level = data.get('fitness_level', user.fitness_level)
+    
+    # If weight is provided, create a new progress entry
+    if 'weight' in data and data['weight']:
+        today = datetime.now().date()
+        existing_progress = Progress.query.filter_by(user_id=user_id, date=today).first()
+        
+        if existing_progress:
+            # Update today's entry
+            existing_progress.weight = data['weight']
+        else:
+            # Create new progress entry
+            new_progress = Progress(
+                user_id=user_id,
+                weight=data['weight'],
+                date=today
+            )
+            db.session.add(new_progress)
+    
+    db.session.commit()
+    return jsonify({'message': 'Profile updated successfully'})
 
 @app.route('/api/progress', methods=['GET', 'POST'])
 def progress_api():

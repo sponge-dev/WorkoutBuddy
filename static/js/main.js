@@ -239,6 +239,51 @@ function calculateBMI(weight, height) {
     return Math.round((weight / (height * height)) * 703 * 10) / 10;
 }
 
+// Profile editing functionality
+function openEditProfile() {
+    // Check if we're on a page that has the modal
+    if (!document.getElementById('userSetupModal')) {
+        // Redirect to home page where the modal exists
+        window.location.href = '/?edit_profile=true';
+        return;
+    }
+    
+    // Load current user data and populate form
+    fetch('/api/user')
+        .then(response => response.json())
+        .then(userData => {
+            // Populate form fields
+            document.getElementById('userName').value = userData.name || '';
+            document.getElementById('userAge').value = userData.age || '';
+            document.getElementById('userHeight').value = userData.height || '';
+            document.getElementById('userGender').value = userData.gender || '';
+            document.getElementById('fitnessLevel').value = userData.fitness_level || '';
+            
+            // Get latest weight from progress
+            fetch('/api/progress')
+                .then(response => response.json())
+                .then(progressData => {
+                    if (progressData.length > 0) {
+                        const latestWeight = progressData[progressData.length - 1].weight;
+                        document.getElementById('userWeight').value = latestWeight || '';
+                    }
+                })
+                .catch(error => console.log('No progress data found'));
+            
+            // Set form to editing mode
+            document.getElementById('userSetupForm').dataset.editing = 'true';
+            document.getElementById('userModalTitle').textContent = 'Update Profile';
+            document.getElementById('saveUserBtnText').textContent = 'Update Profile';
+            
+            // Show modal
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('userSetupModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading user data:', error);
+            alert('Error loading profile data. Please try again.');
+        });
+}
+
 // Format number with appropriate decimals
 function formatNumber(number, decimals = 1) {
     if (number === null || number === undefined) return '-';
@@ -354,6 +399,9 @@ const API = {
     })
 };
 
+// Make openEditProfile globally available for navigation
+window.openEditProfile = openEditProfile;
+
 // Chart.js default configuration
 if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
@@ -408,6 +456,7 @@ window.WorkoutBot = {
     formatDate,
     formatTime,
     calculateBMI,
+    openEditProfile,
     formatNumber,
     LocalStorage,
     API,
